@@ -1,69 +1,214 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect, useMemo } from 'react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import HeroBanner from '@/components/HeroBanner';
+import FilterBar from '@/components/FilterBar';
+import PostCard from '@/components/PostCard';
+import CreatePostModal from '@/components/CreatePostModal';
+import { Post, PostType, Category, Campus } from '@/types/post';
+import { getPosts } from '@/lib/postsService';
+import { Plus, SearchX, RefreshCw } from 'lucide-react';
+
+export default function HomePage() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // Bộ lọc
+  const [typeFilter, setTypeFilter] = useState<'all' | PostType>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all');
+  const [campusFilter, setCampusFilter] = useState<'all' | Campus>('all');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [showDone, setShowDone] = useState(false);
+
+  // Load danh sách bài đăng
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      const data = await getPosts();
+      setPosts(data);
+    } catch (err) {
+      console.error('Lỗi khi tải bài đăng:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPosts();
+
+    // Check query params if ?create=true
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('create') === 'true') {
+        setIsCreateOpen(true);
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
+      ) {
+        e.preventDefault();
+        const searchInput = document.getElementById('input-search-keyword');
+        searchInput?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Đếm số lượng tin open và done
+  const openCount = useMemo(() => posts.filter((p) => p.status === 'open').length, [posts]);
+  const doneCount = useMemo(() => posts.filter((p) => p.status === 'done').length, [posts]);
+
+  // Lọc và tìm kiếm danh sách bài đăng
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      // 1. Lọc theo trạng thái hoàn tất (Nếu không check showDone thì ẩn bài done)
+      if (!showDone && post.status === 'done') {
+        return false;
+      }
+
+      // 2. Lọc theo loại (Lost / Found / All)
+      if (typeFilter !== 'all' && post.type !== typeFilter) {
+        return false;
+      }
+
+      // 3. Lọc theo danh mục
+      if (categoryFilter !== 'all' && post.category !== categoryFilter) {
+        return false;
+      }
+
+      // 4. Lọc theo cơ sở
+      if (campusFilter !== 'all' && post.campus !== campusFilter) {
+        return false;
+      }
+
+      // 5. Tìm kiếm theo từ khóa (tiêu đề + mô tả + địa điểm)
+      if (searchKeyword.trim()) {
+        const query = searchKeyword.toLowerCase().trim();
+        const titleMatch = post.title.toLowerCase().includes(query);
+        const descMatch = (post.description || '').toLowerCase().includes(query);
+        const locMatch = post.location.toLowerCase().includes(query);
+        if (!titleMatch && !descMatch && !locMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [posts, typeFilter, categoryFilter, campusFilter, searchKeyword, showDone]);
+
+  const scrollToSearch = () => {
+    const el = document.getElementById('filter-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen flex flex-col bg-slate-50/70 text-slate-900 selection:bg-blue-500 selection:text-white">
+      {/* THANH ĐIỀU HƯỚNG */}
+      <Navbar onOpenCreateModal={() => setIsCreateOpen(true)} />
+
+      {/* NỘI DUNG CHÍNH */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* HERO BANNER */}
+        <HeroBanner
+          onOpenCreate={() => setIsCreateOpen(true)}
+          onScrollToSearch={scrollToSearch}
+          openCount={openCount}
+          doneCount={doneCount}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {/* BỘ LỌC VÀ TÌM KIẾM (F1) */}
+        <FilterBar
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          campusFilter={campusFilter}
+          setCampusFilter={setCampusFilter}
+          searchKeyword={searchKeyword}
+          setSearchKeyword={setSearchKeyword}
+          showDone={showDone}
+          setShowDone={setShowDone}
+          totalFilteredCount={filteredPosts.length}
+        />
+
+        {/* DANH SÁCH BÀI ĐĂNG (LƯỚI CARD) */}
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 space-y-3">
+            <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="text-sm font-medium">Đang tải danh sách bài đăng...</span>
+          </div>
+        ) : filteredPosts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {filteredPosts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        ) : (
+          /* TRẠNG THÁI KHÔNG TÌM THẤY KẾT QUẢ */
+          <div className="py-16 px-4 bg-white rounded-3xl border border-slate-200 text-center max-w-lg mx-auto shadow-sm">
+            <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <SearchX className="w-7 h-7" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-base mb-1">
+              Không tìm thấy tin nào phù hợp
+            </h3>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              Hãy thử thay đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc danh mục và cơ sở.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => {
+                  setTypeFilter('all');
+                  setCategoryFilter('all');
+                  setCampusFilter('all');
+                  setSearchKeyword('');
+                  setShowDone(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Đặt lại bộ lọc
+              </button>
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer"
+              >
+                + Đăng tin mới
+              </button>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* NÚT NỔI MOBILE ĐĂNG TIN NHANH (FLOATING ACTION BUTTON) */}
+      <div className="fixed bottom-6 right-6 z-30 sm:hidden">
+        <button
+          id="btn-fab-create-post"
+          onClick={() => setIsCreateOpen(true)}
+          className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/40 flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
+          title="Đăng tin mới"
+        >
+          <Plus className="w-7 h-7 stroke-[2.5]" />
+        </button>
+      </div>
+
+      {/* FOOTER */}
+      <Footer />
+
+      {/* MODAL TẠO BÀI ĐĂNG */}
+      <CreatePostModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onPostCreated={loadPosts}
+      />
     </div>
   );
 }
