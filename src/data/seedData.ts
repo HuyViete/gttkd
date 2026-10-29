@@ -1,9 +1,8 @@
 import { Post } from '@/types/post';
 
-// TODO: Thay bằng SĐT/Zalo và link Facebook thật của thành viên nhóm
-// để nút liên hệ mở đúng ứng dụng khi quay video demo.
-const DEMO_PHONE = '0900000000';
-const DEMO_FACEBOOK = 'https://facebook.com/';
+// SĐT/Zalo và Facebook của thành viên nhóm, dùng khi quay video demo.
+const DEMO_PHONE = '0938066716';
+const DEMO_FACEBOOK = 'https://www.facebook.com/nkhangnee';
 
 // Ảnh do thành viên nhóm tự chụp, lưu trong public/images/
 export const INITIAL_POSTS: Post[] = [
@@ -19,7 +18,7 @@ export const INITIAL_POSTS: Post[] = [
     date: '2026-10-28',
     contact_type: 'Zalo',
     contact_value: DEMO_PHONE,
-    contact_name: 'Khang K23',
+    contact_name: 'Dũng K23',
     status: 'open',
     manage_code: 'BK7K2M',
     created_at: '2026-10-28T10:30:00Z',
@@ -34,7 +33,7 @@ export const INITIAL_POSTS: Post[] = [
     location: 'Ghế đá trước tòa B4',
     date: '2026-10-28',
     image_url: '/images/post-002.jpg',
-    contact_type: 'SĐT',
+    contact_type: 'Zalo',
     contact_value: DEMO_PHONE,
     contact_name: 'Nam Anh K23',
     status: 'open',
@@ -55,7 +54,7 @@ export const INITIAL_POSTS: Post[] = [
     image_url: '/images/post-003.jpg',
     contact_type: 'Facebook',
     contact_value: DEMO_FACEBOOK,
-    contact_name: 'Dũng K23',
+    contact_name: 'Khang K23',
     status: 'open',
     manage_code: 'BK3H8R',
     created_at: '2026-10-27T08:20:00Z',
