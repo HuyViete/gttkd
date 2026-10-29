@@ -2,7 +2,7 @@ import { Post, CreatePostInput } from '@/types/post';
 import { INITIAL_POSTS } from '@/data/seedData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const LOCAL_STORAGE_KEY = 'bk_finds_shares_posts_v1';
+const LOCAL_STORAGE_KEY = 'bk_finds_shares_posts_v2';
 
 // Tự sinh mã quản lý 6 ký tự gồm chữ và số in hoa
 export function generateManageCode(): string {
